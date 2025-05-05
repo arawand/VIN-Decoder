@@ -1,49 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Car Info Lookup</title>
+  <meta charset="UTF-8">
+  <title>VIN Decoder</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    input, button {
+      font-size: 16px;
+      padding: 5px;
+    }
+    img {
+      margin-top: 10px;
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
 </head>
 <body>
-  <h2>Enter a Car VIN Code</h2>
-  <input type="text" id="vinInput" placeholder="Enter VIN code">
-  <button onclick="searchCar()">Search</button>
+  <h1>Enter a Car VIN Code</h1>
+  <input type="text" id="vinInput" placeholder="Enter VIN">
+  <button onclick="decodeVIN()">Search</button>
 
-  <h3>Car Information:</h3>
-  <div id="carInfo"></div>
+  <h2>Car Information:</h2>
+  <p id="carInfo">Make: <br>Model:</p>
 
-  <h3>Car Image:</h3>
-  <img id="carImage" src="" alt="Car Image" style="display:none; width:300px;">
+  <h2>Car Image:</h2>
+  <img id="carImage" src="" alt="Car Image">
 
   <script>
-    async function searchCar() {
-      const vin = document.getElementById("vinInput").value;
-      const infoBox = document.getElementById("carInfo");
-      const image = document.getElementById("carImage");
+    function decodeVIN() {
+      const vin = document.getElementById('vinInput').value;
+      fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`)
+        .then(response => response.json())
+        .then(data => {
+          const make = data.Results.find(r => r.Variable === 'Make')?.Value || 'Unknown';
+          const model = data.Results.find(r => r.Variable === 'Model')?.Value || 'Unknown';
 
-      const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
-      const data = await response.json();
+          document.getElementById('carInfo').innerHTML = `Make: ${make}<br>Model: ${model}`;
 
-      let make = "";
-      let model = "";
-
-      data.Results.forEach(item => {
-        if (item.Variable === "Make") make = item.Value;
-        if (item.Variable === "Model") model = item.Value;
-      });
-
-      if (make && model) {
-        infoBox.innerHTML = `Make: ${make}<br>Model: ${model}`;
-
-        // Google Image search thumbnail (unofficial trick)
-        const query = encodeURIComponent(`${make} ${model}`);
-        const imgSrc = `https://source.unsplash.com/600x400/?${query}`;
-        image.src = imgSrc;
-        image.style.display = "block";
-
-      } else {
-        infoBox.innerHTML = "Car not found.";
-        image.style.display = "none";
-      }
+          // Show an image using LoremFlickr as a placeholder based on make and model
+          const query = `${make} ${model}`.replace(/\s+/g, '+');
+          document.getElementById('carImage').src = `https://loremflickr.com/600/400/${query}`;
+        })
+        .catch(error => {
+          console.error('Error decoding VIN:', error);
+          document.getElementById('carInfo').innerText = 'Error fetching car info.';
+        });
     }
   </script>
 </body>
