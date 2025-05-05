@@ -2,55 +2,64 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>VIN Decoder</title>
+  <title>Car VIN Decoder</title>
   <style>
     body {
       background-color: black;
       color: white;
       font-family: Arial, sans-serif;
-      padding: 20px;
+    }
+    h1 {
+      color: white;
     }
     input, button {
-      font-size: 16px;
       padding: 5px;
+      margin: 5px 0;
     }
     img {
-      margin-top: 10px;
       max-width: 100%;
       height: auto;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <h1>Enter a Car VIN Code</h1>
   <input type="text" id="vinInput" placeholder="Enter VIN">
-  <button onclick="decodeVIN()">Search</button>
+  <button onclick="searchCar()">Search</button>
 
   <h2>Car Information:</h2>
-  <p id="carInfo">Make: <br>Model:</p>
+  <div id="carInfo"></div>
 
   <h2>Car Image:</h2>
-  <img id="carImage" src="" alt="Car Image">
+  <img id="carImage" src="" alt="Car Image" />
 
   <script>
-    function decodeVIN() {
-      const vin = document.getElementById('vinInput').value;
-      fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`)
-        .then(response => response.json())
-        .then(data => {
-          const make = data.Results.find(r => r.Variable === 'Make')?.Value || 'Unknown';
-          const model = data.Results.find(r => r.Variable === 'Model')?.Value || 'Unknown';
+    const vinData = {
+      "5YFEPRAE0LP007718": { make: "Toyota", model: "Corolla" },
+      "2HGFC2F69KH512345": { make: "Honda", model: "Civic" },
+      "1FA6P8TH6J5101234": { make: "Ford", model: "Mustang" }
+      // Add more VINs here
+    };
 
-          document.getElementById('carInfo').innerHTML = `Make: ${make}<br>Model: ${model}`;
+    function searchCar() {
+      const vin = document.getElementById('vinInput').value.trim().toUpperCase();
+      const car = vinData[vin];
 
-          // Show an image using LoremFlickr as a placeholder based on make and model
-          const query = `${make} ${model}`.replace(/\s+/g, '+');
-          document.getElementById('carImage').src = `https://loremflickr.com/600/400/${query}`;
-        })
-        .catch(error => {
-          console.error('Error decoding VIN:', error);
-          document.getElementById('carInfo').innerText = 'Error fetching car info.';
-        });
+      if (car) {
+        document.getElementById('carInfo').innerHTML = `
+          Make: ${car.make}<br>
+          Model: ${car.model}
+        `;
+
+        const imagePath = `images/${car.make}_${car.model}.jpg`;
+        document.getElementById('carImage').src = imagePath;
+        document.getElementById('carImage').alt = `${car.make} ${car.model}`;
+      } else {
+        document.getElementById('carInfo').innerText = "Car not found.";
+        document.getElementById('carImage').src = "";
+        document.getElementById('carImage').alt = "";
+      }
     }
   </script>
 </body>
