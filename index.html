@@ -1,34 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>VIN Decoder</title>
+  <title>Car Info Lookup</title>
 </head>
-<body style="background-color:black; color:white; font-family:sans-serif; text-align:center; padding:20px;">
-  <h1>Welcome to My VIN Decoder</h1>
-  <p>This site will decode your car's VIN using the NHTSA API.</p>
+<body>
+  <h2>Enter a Car VIN Code</h2>
+  <input type="text" id="vinInput" placeholder="Enter VIN code">
+  <button onclick="searchCar()">Search</button>
 
-  <input type="text" id="vinInput" placeholder="Enter VIN" style="padding:10px; width:80%; max-width:300px;" />
-  <button onclick="decodeVIN()" style="padding:10px 20px; margin-top:10px;">Decode VIN</button>
+  <h3>Car Information:</h3>
+  <div id="carInfo"></div>
 
-  <div id="result" style="margin-top:20px;"></div>
+  <h3>Car Image:</h3>
+  <img id="carImage" src="" alt="Car Image" style="display:none; width:300px;">
 
   <script>
-    async function decodeVIN() {
+    async function searchCar() {
       const vin = document.getElementById("vinInput").value;
-      const resultDiv = document.getElementById("result");
+      const infoBox = document.getElementById("carInfo");
+      const image = document.getElementById("carImage");
 
-      resultDiv.innerHTML = "Loading...";
-      const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin}?format=json`);
+      const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin}?format=json`);
       const data = await response.json();
 
-      let output = "<h3>VIN Results:</h3><ul>";
+      let make = "";
+      let model = "";
+
       data.Results.forEach(item => {
-        if (item.Value && item.Variable) {
-          output += `<li><strong>${item.Variable}:</strong> ${item.Value}</li>`;
-        }
+        if (item.Variable === "Make") make = item.Value;
+        if (item.Variable === "Model") model = item.Value;
       });
-      output += "</ul>";
-      resultDiv.innerHTML = output;
+
+      if (make && model) {
+        infoBox.innerHTML = `Make: ${make}<br>Model: ${model}`;
+
+        // Get car photo from online API
+        const imageURL = `https://www.carimagery.com/api.asmx/GetImageUrl?searchTerm=${make}%20${model}`;
+        const imageRes = await fetch(imageURL);
+        const imageText = await imageRes.text();
+        const match = imageText.match(/<string xmlns="[^"]+">([^<]+)<\/string>/);
+        const photoURL = match ? match[1] : "";
+
+        if (photoURL) {
+          image.src = photoURL;
+          image.style.display = "block";
+        } else {
+          image.style.display = "none";
+        }
+      } else {
+        infoBox.innerHTML = "Car not found.";
+        image.style.display = "none";
+      }
     }
   </script>
 </body>
